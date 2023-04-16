@@ -1,21 +1,23 @@
 package com.mycompany.app;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 class Transaction {
+    long debit1;
+    long debit2;
 
-    public String debitAccount;
-    public String creditAccount;
+    long credit1;
+    long credit2;
+
     public long amount;
 }
 
 class Account {
-    public String account;
+
+    long account1;
+    long account2;
+
     public int debitCount;
     public int creditCount;
     public long balance;
@@ -28,8 +30,16 @@ public class Transactions {
         StringBuilder sb = new StringBuilder();
         sb.append('[');
         for (Account account : acc) {
+
             sb.append("{\"account\":\"");
-            sb.append(account.account);
+
+            for (int i = 0; i < 16; i++) {
+                sb.append((char) (((account.account1 >> (60 - i * 4)) & 0b00001111) + '0'));
+            }
+            for (int i = 0; i < 10; i++) {
+                sb.append((char) (((account.account2 >> (60 - i * 4)) & 0b00001111) + '0'));
+            }
+
             sb.append("\",\"debitCount\":");
             sb.append(account.debitCount);
             sb.append(",\"creditCount\":");
@@ -45,7 +55,14 @@ public class Transactions {
 
     static void sort(Account[] accounts) {
         // double t = System.nanoTime();
-        Arrays.sort(accounts, (a, b) -> a.account.compareTo(b.account));
+        Arrays.sort(accounts, (a, b) -> {
+
+            int c = Long.compareUnsigned(a.account1, b.account1);
+            if (c == 0) {
+                return Long.compareUnsigned(a.account2, b.account2);
+            }
+            return c;
+        });
         // System.out.println("sort time:" + (System.nanoTime() - t) / 1_000_000.0);
 
     }
@@ -60,8 +77,8 @@ public class Transactions {
 
         for (Transaction t : transactions) {
 
-            Account debit = map.get(t.debitAccount);
-            Account credit = map.get(t.creditAccount);
+            Account debit = map.get(t.debit1, t.debit2);
+            Account credit = map.get(t.credit1, t.credit2);
 
             // Account debit = map.computeIfAbsent(t.debitAccount, (k) -> {
             // Account a = new Account();
@@ -85,7 +102,7 @@ public class Transactions {
         // Account[] arr = map.values().toArray(new Account[0]);
 
         Account[] arr = map.toArray();
-
+        // System.out.println(map.collisions);
         // System.out.println("process time:" + (System.nanoTime() - tt) / 1_000_000.0);
 
         sort(arr);
@@ -95,17 +112,10 @@ public class Transactions {
 
     static String process(Transaction[] transactions)
             throws IOException, ParsingErrorExceptionException {
-        // System.out.println("-------");
 
-        // Transaction[] transactions = parse(s);
-        // double t = System.nanoTime();
         Account[] c = processTransactions(transactions);
-        // System.out.println("process time:" + (System.nanoTime() - t) / 1_000_000.0);
 
-        // double t2 = System.nanoTime();
         String ss = serialize(c);
-        // System.out.println("serialize time:" + (System.nanoTime() - t2) /
-        // 1_000_000.0);
 
         return ss;
     }

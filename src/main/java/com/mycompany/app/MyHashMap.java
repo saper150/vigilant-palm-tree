@@ -1,28 +1,17 @@
 package com.mycompany.app;
 
 public class MyHashMap {
-    private static final int DEFAULT_CAPACITY = 128;
-    private static final double DEFAULT_LOAD_FACTOR = 0.3;
+    private static final int DEFAULT_CAPACITY = 2048;
 
-    private Account[] table;
-    private int size;
-    private double loadFactor;
-    private int threshold;
-
-    public MyHashMap() {
-        this(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
-    }
-
-    public MyHashMap(int initialCapacity, double loadFactor) {
-        table = new Account[initialCapacity];
-        size = 0;
-        this.loadFactor = loadFactor;
-        threshold = (int) (initialCapacity * loadFactor);
-    }
+    private Account[] table = new Account[DEFAULT_CAPACITY];
+    private int tableSizeMinusOne = table.length - 1;
+    private int size = 0;
+    private double loadFactor = 0.3;
+    private int threshold = (int) (DEFAULT_CAPACITY * loadFactor);
 
     private void put(Account acc) {
 
-        int index = hash(acc.account);
+        int index = hash(acc.account1, acc.account2);
         while (table[index] != null) {
             if (++index >= table.length) {
                 index = 0;
@@ -33,10 +22,11 @@ public class MyHashMap {
 
     }
 
-    public Account get(String key) {
-        int index = hash(key);
-        while (table[index] != null && !table[index].account.equals(key)) {
+    public Account get(long key1, long key2) {
 
+        int index = hash(key1, key2);
+
+        while (table[index] != null && !(table[index].account1 == key1 && table[index].account2 == key2)) {
             if (++index >= table.length) {
                 index = 0;
             }
@@ -46,7 +36,8 @@ public class MyHashMap {
             return table[index];
         } else {
             Account account = new Account();
-            account.account = key;
+            account.account1 = key1;
+            account.account2 = key2;
             table[index] = account;
             if (++size >= threshold) {
                 resize();
@@ -56,13 +47,9 @@ public class MyHashMap {
         }
     }
 
-    private int hash(String key) {
-        return key.hashCode() & (table.length - 1);
-        // int hash = 0;
-        // for (int i = 0; i < key.length(); i++) {
-        // hash = hash * 31 + key.charAt(i);
-        // }
-        // return hash & (table.length - 1);
+    private int hash(long key1, long key2) {
+
+        return (int) ((key1 ^ (key2 >> 33) ^ (key1 >> 32)) & tableSizeMinusOne);
     }
 
     public Account[] toArray() {
@@ -79,6 +66,7 @@ public class MyHashMap {
     private void resize() {
         Account[] oldTable = table;
         table = new Account[table.length * 2];
+        tableSizeMinusOne = table.length - 1;
         threshold = (int) (table.length * loadFactor);
 
         for (Account entry : oldTable) {

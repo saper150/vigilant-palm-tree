@@ -48,7 +48,7 @@ public class JSONParser {
         return r == 0x20 || r == 0x0A || r == 0x09 || r == 0x0D;
     }
 
-    static int readInt(int start, int end) {
+    private static int toInt(int start, int end) {
         int res = 0;
         int pow = 1;
         for (int i = end - 1; i >= start; i--) {
@@ -57,6 +57,27 @@ public class JSONParser {
         }
 
         return res;
+    }
+
+    static int readNumber() throws IOException, ParsingErrorExceptionException {
+        byte[] b = buffer;
+        skipWhitespace();
+        int start = cursor;
+        while (Character.isDigit((char) read())) {
+        }
+
+        int e = toInt(start - 1, cursor - 1);
+        cursor--;
+        return e;
+
+        // while (true) {
+        // byte r = GameParser.buffer[GameParser.cursor++];
+
+        // if (r == ',' || r == '}') {
+        // GameParser.cursor--;
+        // // return toInt(start);
+        // }
+        // }
     }
 
     static boolean compareKey(byte[] a) throws IOException {
@@ -81,6 +102,17 @@ public class JSONParser {
                 throw new ParsingErrorExceptionException();
             }
         }
+    }
+
+    static void skipWhitespace() throws IOException, ParsingErrorExceptionException {
+
+        while (true) {
+            byte r = read();
+            if (!isWhitespace(r)) {
+                break;
+            }
+        }
+
     }
 
     static byte skipToEther(byte a, byte b) throws IOException, ParsingErrorExceptionException {
@@ -113,16 +145,16 @@ public class JSONParser {
 
 class TransactionsParser {
 
-    static byte[] debitAccountBytes = "debitAccount\"".getBytes();
-    static byte[] creditAccountBytes = "creditAccount\"".getBytes();
-    static byte[] amountBytes = "amount\"".getBytes();
+    private static byte[] debitAccountBytes = "debitAccount\"".getBytes();
+    private static byte[] creditAccountBytes = "creditAccount\"".getBytes();
+    private static byte[] amountBytes = "amount\"".getBytes();
 
     static Transaction[] parse(InputStream s) throws IOException, ParsingErrorExceptionException {
         JSONParser.reset(s);
         return readArray();
     }
 
-    static Transaction[] readArray() throws IOException, ParsingErrorExceptionException {
+    private static Transaction[] readArray() throws IOException, ParsingErrorExceptionException {
         JSONParser.skipTo((byte) '[');
 
         ArrayList<Transaction> result = new ArrayList<>();
@@ -146,7 +178,40 @@ class TransactionsParser {
         }
     }
 
-    static long parseAmount() throws IOException, ParsingErrorExceptionException {
+    private static void readAccount(Transaction tr, int ee) throws IOException, ParsingErrorExceptionException {
+
+        JSONParser.skipTo((byte) '"');
+        JSONParser.ensureSize(JSONParser.cursor + 26);
+
+        switch (ee) {
+            case 0:
+                for (int i = 0; i < 16; i++) {
+                    tr.credit1 = tr.credit1
+                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
+                }
+
+                for (int i = 16; i < 26; i++) {
+                    tr.credit2 = tr.credit2
+                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
+                }
+                break;
+            case 1:
+                for (int i = 0; i < 16; i++) {
+                    tr.debit1 = tr.debit1
+                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
+                }
+
+                for (int i = 16; i < 26; i++) {
+                    tr.debit2 = tr.debit2
+                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - ((i - 16) * 4));
+                }
+
+        }
+        JSONParser.cursor += 27;
+
+    }
+
+    private static long parseAmount() throws IOException, ParsingErrorExceptionException {
 
         int start = 0;
 
@@ -170,18 +235,19 @@ class TransactionsParser {
         }
     }
 
-    static void key(Transaction r) throws IOException, ParsingErrorExceptionException {
+    private static void key(Transaction r) throws IOException, ParsingErrorExceptionException {
         JSONParser.skipTo((byte) '"');
 
         if (JSONParser.compareKey(creditAccountBytes)) {
             JSONParser.skipTo((byte) ':');
-            r.creditAccount = JSONParser.readString();
+            readAccount(r, 0);
+            // r.creditAccount = "";
             return;
         }
 
         if (JSONParser.compareKey(debitAccountBytes)) {
             JSONParser.skipTo((byte) ':');
-            r.debitAccount = JSONParser.readString();
+            readAccount(r, 1);
             return;
         }
 
@@ -207,4 +273,97 @@ class TransactionsParser {
 
         return r;
     }
+}
+
+class GameeParser {
+
+    private static byte[] groupCountBytes = "groupCount\"".getBytes();
+    private static byte[] clansBytes = "clans\"".getBytes();
+    private static byte[] numberOfPlayersBytes = "numberOfPlayers\"".getBytes();
+    private static byte[] pointsBytes = "points\"".getBytes();
+
+    static Players parse(InputStream is) throws IOException, ParsingErrorExceptionException {
+        JSONParser.reset(is);
+
+        Players players = new Players();
+
+        JSONParser.skipTo((byte) '{');
+        mainObjectKey(players);
+        JSONParser.skipTo((byte) ',');
+        mainObjectKey(players);
+
+        return players;
+    }
+
+    private static void mainObjectKey(Players p) throws IOException, ParsingErrorExceptionException {
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(groupCountBytes)) {
+            JSONParser.skipTo((byte) ':');
+            p.groupCount = JSONParser.readNumber();
+            return;
+        }
+
+        if (JSONParser.compareKey(clansBytes)) {
+            JSONParser.skipTo((byte) ':');
+            p.clans = parseArray();
+        }
+
+    }
+
+    private static Clan[] parseArray() throws IOException, ParsingErrorExceptionException {
+
+        ArrayList<Clan> result = new ArrayList<>();
+
+        JSONParser.skipTo((byte) '[');
+
+        byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
+        if (read == ']') {
+            return result.toArray(new Clan[0]);
+        } else if (read == '{') {
+            result.add(parseObject());
+        }
+
+        while (true) {
+
+            byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
+            if (readInner == ']') {
+                return result.toArray(new Clan[0]);
+            } else if (readInner == ',') {
+                JSONParser.skipTo((byte) '{');
+                result.add(parseObject());
+            }
+
+        }
+    }
+
+    private static Clan parseObject() throws IOException, ParsingErrorExceptionException {
+        Clan r = new Clan();
+
+        key(r);
+        JSONParser.skipTo((byte) ',');
+        key(r);
+
+        JSONParser.skipTo((byte) '}');
+        return r;
+    }
+
+    private static void key(Clan r) throws IOException, ParsingErrorExceptionException {
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(numberOfPlayersBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.numberOfPlayers = JSONParser.readNumber();
+            // r.creditAccount = "";
+            return;
+        }
+
+        if (JSONParser.compareKey(pointsBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.points = JSONParser.readNumber();
+            return;
+        }
+
+    }
+
 }
