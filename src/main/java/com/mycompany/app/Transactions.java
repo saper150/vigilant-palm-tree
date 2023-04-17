@@ -54,24 +54,21 @@ public class Transactions {
     }
 
     static void sort(Account[] accounts) {
-        // double t = System.nanoTime();
-        Arrays.sort(accounts, (a, b) -> {
 
-            int c = Long.compareUnsigned(a.account1, b.account1);
-            if (c == 0) {
-                return Long.compareUnsigned(a.account2, b.account2);
-            }
-            return c;
-        });
-        // System.out.println("sort time:" + (System.nanoTime() - t) / 1_000_000.0);
+        SortAccounts.quickSort(accounts);
+
+        // Arrays.sort(accounts, (a, b) -> {
+
+        // int c = Long.compareUnsigned(a.account1, b.account1);
+        // if (c == 0) {
+        // return Long.compareUnsigned(a.account2, b.account2);
+        // }
+        // return c;
+        // });
 
     }
 
     static Account[] processTransactions(Transaction[] transactions) {
-
-        double tt = System.nanoTime();
-
-        // HashMap<String, Account> map = new HashMap<>();
 
         MyHashMap map = new MyHashMap();
 
@@ -79,17 +76,6 @@ public class Transactions {
 
             Account debit = map.get(t.debit1, t.debit2);
             Account credit = map.get(t.credit1, t.credit2);
-
-            // Account debit = map.computeIfAbsent(t.debitAccount, (k) -> {
-            // Account a = new Account();
-            // a.account = k;
-            // return a;
-            // });
-            // Account credit = map.computeIfAbsent(t.creditAccount, (k) -> {
-            // Account a = new Account();
-            // a.account = k;
-            // return a;
-            // });
 
             debit.balance -= (t.amount);
             debit.debitCount++;
@@ -99,11 +85,7 @@ public class Transactions {
 
         }
 
-        // Account[] arr = map.values().toArray(new Account[0]);
-
         Account[] arr = map.toArray();
-        // System.out.println(map.collisions);
-        // System.out.println("process time:" + (System.nanoTime() - tt) / 1_000_000.0);
 
         sort(arr);
         return arr;

@@ -6,7 +6,7 @@ public class MyHashMap {
     private Account[] table = new Account[DEFAULT_CAPACITY];
     private int tableSizeMinusOne = table.length - 1;
     private int size = 0;
-    private double loadFactor = 0.3;
+    private final double loadFactor = 0.3;
     private int threshold = (int) (DEFAULT_CAPACITY * loadFactor);
 
     private void put(Account acc) {
@@ -26,24 +26,26 @@ public class MyHashMap {
 
         int index = hash(key1, key2);
 
-        while (table[index] != null && !(table[index].account1 == key1 && table[index].account2 == key2)) {
+        while (true) {
+
+            if (table[index] == null) {
+                Account account = new Account();
+                account.account1 = key1;
+                account.account2 = key2;
+                table[index] = account;
+                if (++size >= threshold) {
+                    resize();
+                }
+                return account;
+            }
+
+            if (table[index].account1 == key1 && table[index].account2 == key2) {
+                return table[index];
+            }
+
             if (++index >= table.length) {
                 index = 0;
             }
-        }
-
-        if (table[index] != null) {
-            return table[index];
-        } else {
-            Account account = new Account();
-            account.account1 = key1;
-            account.account2 = key2;
-            table[index] = account;
-            if (++size >= threshold) {
-                resize();
-            }
-            return account;
-
         }
     }
 

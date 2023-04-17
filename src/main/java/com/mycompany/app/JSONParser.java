@@ -275,15 +275,18 @@ class TransactionsParser {
     }
 }
 
-class GameeParser {
+class GameParser {
 
     private static byte[] groupCountBytes = "groupCount\"".getBytes();
     private static byte[] clansBytes = "clans\"".getBytes();
     private static byte[] numberOfPlayersBytes = "numberOfPlayers\"".getBytes();
     private static byte[] pointsBytes = "points\"".getBytes();
 
+    private static MyArray<Clan> result = new MyArray<Clan>();
+
     static Players parse(InputStream is) throws IOException, ParsingErrorExceptionException {
         JSONParser.reset(is);
+        result.clear();
 
         Players players = new Players();
 
@@ -311,15 +314,13 @@ class GameeParser {
 
     }
 
-    private static Clan[] parseArray() throws IOException, ParsingErrorExceptionException {
-
-        ArrayList<Clan> result = new ArrayList<>();
+    private static MyArray<Clan> parseArray() throws IOException, ParsingErrorExceptionException {
 
         JSONParser.skipTo((byte) '[');
 
         byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
         if (read == ']') {
-            return result.toArray(new Clan[0]);
+            return result;
         } else if (read == '{') {
             result.add(parseObject());
         }
@@ -328,7 +329,7 @@ class GameeParser {
 
             byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
             if (readInner == ']') {
-                return result.toArray(new Clan[0]);
+                return result;
             } else if (readInner == ',') {
                 JSONParser.skipTo((byte) '{');
                 result.add(parseObject());
@@ -364,6 +365,162 @@ class GameeParser {
             return;
         }
 
+    }
+
+}
+
+class AtmParser {
+
+    static byte[] regionKeyBytes = "region\"".getBytes();
+    static byte[] requestTypeBytes = "requestType\"".getBytes();
+    static byte[] atmIdKeyBytes = "atmId\"".getBytes();
+
+    static byte[] STANDARDBytes = "STANDARD\"".getBytes();
+    static byte[] PRIORITYBytes = "PRIORITY\"".getBytes();
+    static byte[] SignalLowBytes = "SIGNAL_LOW\"".getBytes();
+    static byte[] FAILURE_RESTARTBytes = "FAILURE_RESTART\"".getBytes();
+
+    private static MyArray<Request> result = new MyArray<Request>();
+
+    static void key(Request r, int i) throws IOException, ParsingErrorExceptionException {
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.region = JSONParser.readNumber();
+            return;
+        }
+
+        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
+            JSONParser.skipTo((byte) ':');
+            JSONParser.skipTo((byte) '"');
+            r.requestType = AtmParser.readRequestType();
+            return;
+        }
+
+        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.atmId = JSONParser.readNumber();
+            return;
+        }
+    }
+
+    static int readRequestType() throws ParsingErrorExceptionException, IOException {
+
+        if (JSONParser.compareKey(AtmParser.STANDARDBytes)) {
+            return 3;
+        }
+
+        if (JSONParser.compareKey(AtmParser.PRIORITYBytes)) {
+            return 1;
+        }
+
+        if (JSONParser.compareKey(AtmParser.SignalLowBytes)) {
+            return 2;
+        }
+
+        if (JSONParser.compareKey(AtmParser.FAILURE_RESTARTBytes)) {
+            return 0;
+        }
+
+        throw new ParsingErrorExceptionException();
+
+    }
+
+    static Request parseObject() throws IOException, ParsingErrorExceptionException {
+
+        Request r = new Request();
+
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.region = JSONParser.readNumber();
+        } else
+
+        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
+            JSONParser.skipTo((byte) ':');
+            JSONParser.skipTo((byte) '"');
+            r.requestType = AtmParser.readRequestType();
+        } else
+
+        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.atmId = JSONParser.readNumber();
+        }
+
+        // AtmmParser.key(r, 0);
+        JSONParser.skipTo((byte) ',');
+
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
+            JSONParser.skipTo((byte) ':');
+            JSONParser.skipTo((byte) '"');
+            r.requestType = AtmParser.readRequestType();
+        } else if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.region = JSONParser.readNumber();
+        } else
+
+        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.atmId = JSONParser.readNumber();
+        }
+
+        // AtmmParser.key(r, 1);
+        JSONParser.skipTo((byte) ',');
+
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.atmId = JSONParser.readNumber();
+        } else
+
+        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            r.region = JSONParser.readNumber();
+        } else
+
+        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
+            JSONParser.skipTo((byte) ':');
+            JSONParser.skipTo((byte) '"');
+            r.requestType = AtmParser.readRequestType();
+        }
+
+        // AtmmParser.key(r, 2);
+
+        JSONParser.skipTo((byte) '}');
+
+        return r;
+    }
+
+    static MyArray<Request> parse(InputStream is) throws IOException, ParsingErrorExceptionException {
+
+        JSONParser.reset(is);
+        result.clear();
+
+        JSONParser.skipTo((byte) '[');
+
+        byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
+        if (read == ']') {
+            return result;
+        } else if (read == '{') {
+            result.add(parseObject());
+        }
+
+        while (true) {
+
+            byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
+            if (readInner == ']') {
+                return result;
+            } else if (readInner == ',') {
+                JSONParser.skipTo((byte) '{');
+                result.add(parseObject());
+            }
+
+        }
     }
 
 }
