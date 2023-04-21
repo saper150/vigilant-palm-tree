@@ -5,37 +5,133 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 class Request {
-    public int region;
-    public int requestType;
-    public int atmId;
-
-    public void setRequestType(String string) {
-        if (string.equals("STANDARD")) {
-            requestType = 3;
-        }
-
-        if (string.equals("SIGNAL_LOW")) {
-            requestType = 2;
-        }
-
-        if (string.equals("PRIORITY")) {
-            requestType = 1;
-        }
-
-        requestType = 0;
+    static int getRegion(long request) {
+        return (int) request;
     }
+
+    static int getAtmId(long request) {
+        return (int) (request >> 32 & 0b0011111111111111111111);
+    }
+
+    static int getRequestType(long request) {
+        return (byte) ((request >> 62)) & 0b00000011;
+    }
+
+}
+
+class AtmParser {
+
+    static byte[] regionKeyBytes = "region\"".getBytes();
+    static byte[] requestTypeBytes = "requestType\"".getBytes();
+    static byte[] atmIdKeyBytes = "atmId\"".getBytes();
+
+    static byte[] STANDARDBytes = "STANDARD\"".getBytes();
+    static byte[] PRIORITYBytes = "PRIORITY\"".getBytes();
+    static byte[] SignalLowBytes = "SIGNAL_LOW\"".getBytes();
+    static byte[] FAILURE_RESTARTBytes = "FAILURE_RESTART\"".getBytes();
+
+    private static LongArray result = new LongArray();
+
+    static long request = 0;
+
+    static void key() throws IOException, ParsingErrorExceptionException {
+        JSONParser.skipTo((byte) '"');
+
+        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            request = request | (((long) JSONParser.readNumber()) & 0xffffffffL);
+            return;
+        }
+
+        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
+            JSONParser.skipTo((byte) ':');
+            JSONParser.skipTo((byte) '"');
+            request = request | ((((long) AtmParser.readRequestType()) & 0xffffffffL) << 62);
+            return;
+        }
+
+        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
+            JSONParser.skipTo((byte) ':');
+            request = request | (((long) JSONParser.readNumber()) << 32);
+            return;
+        }
+    }
+
+    static int readRequestType() throws ParsingErrorExceptionException, IOException {
+
+        if (JSONParser.compareKey(AtmParser.STANDARDBytes)) {
+            return 3;
+        }
+
+        if (JSONParser.compareKey(AtmParser.PRIORITYBytes)) {
+            return 1;
+        }
+
+        if (JSONParser.compareKey(AtmParser.SignalLowBytes)) {
+            return 2;
+        }
+
+        if (JSONParser.compareKey(AtmParser.FAILURE_RESTARTBytes)) {
+            return 0;
+        }
+
+        throw new ParsingErrorExceptionException();
+
+    }
+
+    static long parseObject() throws IOException, ParsingErrorExceptionException {
+
+        request = 0;
+
+        AtmParser.key();
+        JSONParser.skipTo((byte) ',');
+        AtmParser.key();
+        JSONParser.skipTo((byte) ',');
+        AtmParser.key();
+        JSONParser.skipTo((byte) '}');
+
+        return request;
+    }
+
+    static LongArray parse(InputStream is) throws IOException, ParsingErrorExceptionException {
+
+        JSONParser.reset(is);
+        result.clear();
+
+        JSONParser.skipTo((byte) '[');
+
+        byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
+        if (read == ']') {
+            return result;
+        } else if (read == '{') {
+            result.add(parseObject());
+        }
+
+        while (true) {
+
+            byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
+            if (readInner == ']') {
+                return result;
+            } else if (readInner == ',') {
+                JSONParser.skipTo((byte) '{');
+                result.add(parseObject());
+            }
+
+        }
+    }
+
 }
 
 public class AtmService {
 
     static final int MAX_SIZE = 10001;
 
-    static MyArray<Request>[] MyArrayPool = new MyArray[MAX_SIZE];
+    static LongArray[] MyArrayPool = new LongArray[MAX_SIZE];
     static int arrayPoolIndex = 0;
 
-    static MyArray<Request>[] byRegion = new MyArray[MAX_SIZE];
+    static LongArray[] byRegions = new LongArray[MAX_SIZE];
 
-    static final MyArray<Request>[] buckets = new MyArray[4];
+    static final LongArray[] buckets = new LongArray[4];
 
     static byte[] added = new byte[MAX_SIZE];
 
@@ -45,35 +141,49 @@ public class AtmService {
 
     static {
         for (int i = 0; i < MAX_SIZE; i++) {
-            MyArrayPool[i] = new MyArray<>();
+            MyArrayPool[i] = new LongArray();
         }
 
         for (int i = 0; i < buckets.length; i++) {
-            buckets[i] = new MyArray<>();
+            buckets[i] = new LongArray();
         }
 
     }
 
     public static void clearAdded() {
-
         System.arraycopy(falseArray, 0, added, 0, MAX_SIZE);
-
-        // for (int i = 0; i < arr.length; i++) {
-        // arr[i] = 0;
-        // }
-
-        // int len = array.length;
-
-        // if (len > 0) {
-        // array[0] = 0;
-        // }
-
-        // for (int i = 1; i < len; i += i) {
-        // System.arraycopy(array, 0, array, i, ((len - i) < i) ? (len - i) : i);
-        // }
     }
 
-    static String process(MyArray<Request> l) {
+    static void processBuckets() {
+
+        clearAdded();
+
+        for (int i = 0; i < buckets.length; i++) {
+            LongArray bucket = buckets[i];
+
+            for (int j = 0; j < bucket.size; j++) {
+                Long request = bucket.get(j);
+
+                int atmId = Request.getAtmId(request);
+                int region = Request.getRegion(request);
+
+                if (added[atmId] != 0) {
+                    continue;
+                }
+
+                builder.append("{\"region\":");
+                builder.append(region);
+                builder.append(",\"atmId\":");
+                builder.append(atmId);
+                builder.append("},");
+                added[atmId] = 1;
+
+            }
+
+        }
+    }
+
+    static String process(LongArray requests) {
 
         for (int i = 0; i < arrayPoolIndex; i++) {
             MyArrayPool[i].clear();
@@ -81,26 +191,30 @@ public class AtmService {
 
         arrayPoolIndex = 0;
 
-        Arrays.fill(AtmService.byRegion, null);
+        Arrays.fill(byRegions, null);
 
-        AtmService.builder.setLength(0);
+        builder.setLength(0);
 
         builder.append('[');
 
         int maxRegion = 0;
 
-        for (int i = 0; i < l.size; i++) {
-            Request request = l.get(i);
-            if (AtmService.byRegion[request.region] == null) {
-                AtmService.byRegion[request.region] = MyArrayPool[arrayPoolIndex++];
-            }
-            maxRegion = Math.max(maxRegion, request.region);
+        for (int i = 0; i < requests.size; i++) {
 
-            AtmService.byRegion[request.region].add(request);
+            long request = requests.get(i);
+            int region = Request.getRegion(request);
+
+            if (byRegions[region] == null) {
+                byRegions[region] = MyArrayPool[arrayPoolIndex++];
+            }
+            maxRegion = Math.max(maxRegion, region);
+
+            byRegions[region].add(request);
         }
 
         for (int i = 1; i < maxRegion + 1; i++) {
-            MyArray<Request> byRegion = AtmService.byRegion[i];
+            LongArray byRegion = byRegions[i];
+
             if (byRegion == null) {
                 continue;
             }
@@ -110,36 +224,13 @@ public class AtmService {
             }
 
             for (int j = 0; j < byRegion.size; j++) {
-                Request request = byRegion.get(j);
-                buckets[request.requestType].add(request);
+                long request = byRegion.get(j);
+
+                buckets[Request.getRequestType(request)].add(request);
 
             }
 
-            // byRegion.sort((a, b) -> {
-            // return a.requestType - b.requestType;
-            // });
-            AtmService.clearAdded();
-
-            for (MyArray<Request> bucket : buckets) {
-                for (int j = 0; j < bucket.size; j++) {
-
-                    Request rr = bucket.get(j);
-
-                    if (AtmService.added[rr.atmId] != 0) {
-                        continue;
-                    }
-
-                    AtmService.builder.append("{\"region\":");
-                    AtmService.builder.append(rr.region);
-                    AtmService.builder.append(",\"atmId\":");
-                    AtmService.builder.append(rr.atmId);
-                    AtmService.builder.append("},");
-
-                    AtmService.added[rr.atmId] = 1;
-
-                }
-
-            }
+            processBuckets();
 
         }
 

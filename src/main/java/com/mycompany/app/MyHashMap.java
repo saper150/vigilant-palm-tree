@@ -1,7 +1,7 @@
 package com.mycompany.app;
 
 public class MyHashMap {
-    private static final int DEFAULT_CAPACITY = 2048;
+    private static final int DEFAULT_CAPACITY = 1024 * 16;
 
     private Account[] table = new Account[DEFAULT_CAPACITY];
     private int tableSizeMinusOne = table.length - 1;
@@ -42,7 +42,6 @@ public class MyHashMap {
             if (table[index].account1 == key1 && table[index].account2 == key2) {
                 return table[index];
             }
-
             if (++index >= table.length) {
                 index = 0;
             }
@@ -50,8 +49,8 @@ public class MyHashMap {
     }
 
     private int hash(long key1, long key2) {
-
-        return (int) ((key1 ^ (key2 >> 33) ^ (key1 >> 32)) & tableSizeMinusOne);
+        return (int) (key1 ^ key2 >> 49) & tableSizeMinusOne;
+        // return (int) (((key1) ^ ((key2) >> 47) ^ (key1 >> 49)) & tableSizeMinusOne);
     }
 
     public Account[] toArray() {

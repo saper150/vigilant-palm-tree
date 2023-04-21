@@ -3,28 +3,28 @@ package com.mycompany.app;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 class ParsingErrorExceptionException extends Exception {
 }
 
 public class JSONParser {
 
-    static final int blockSize = 1024 * 20;
+    static final int blockSize = 1024 * 500;
 
     static InputStream is;
-    static byte[] buffer = new byte[blockSize * 10];
+    static byte[] buffer = new byte[1024 * 10_000];
     static int bufferEnd = 0;
     static int cursor = 0;
 
     static void ensureSize(int size) throws IOException {
         while (size >= bufferEnd) {
-            if (buffer.length - bufferEnd < blockSize) {
+            if (buffer.length - bufferEnd <= blockSize) {
 
                 byte[] newBuffer = new byte[buffer.length * 2];
                 System.arraycopy(buffer, 0, newBuffer, 0, bufferEnd);
                 buffer = newBuffer;
             }
+
             bufferEnd += is.read(buffer, bufferEnd, blockSize);
         }
 
@@ -48,7 +48,7 @@ public class JSONParser {
         return r == 0x20 || r == 0x0A || r == 0x09 || r == 0x0D;
     }
 
-    private static int toInt(int start, int end) {
+    static int toInt(int start, int end) {
         int res = 0;
         int pow = 1;
         for (int i = end - 1; i >= start; i--) {
@@ -59,25 +59,19 @@ public class JSONParser {
         return res;
     }
 
+    static boolean isDigit(byte b) {
+        return b >= '0' && b <= '9';
+    }
+
     static int readNumber() throws IOException, ParsingErrorExceptionException {
-        byte[] b = buffer;
         skipWhitespace();
         int start = cursor;
-        while (Character.isDigit((char) read())) {
+        while (isDigit(read())) {
         }
 
         int e = toInt(start - 1, cursor - 1);
         cursor--;
         return e;
-
-        // while (true) {
-        // byte r = GameParser.buffer[GameParser.cursor++];
-
-        // if (r == ',' || r == '}') {
-        // GameParser.cursor--;
-        // // return toInt(start);
-        // }
-        // }
     }
 
     static boolean compareKey(byte[] a) throws IOException {
@@ -141,138 +135,6 @@ public class JSONParser {
         cursor = 0;
     }
 
-}
-
-class TransactionsParser {
-
-    private static byte[] debitAccountBytes = "debitAccount\"".getBytes();
-    private static byte[] creditAccountBytes = "creditAccount\"".getBytes();
-    private static byte[] amountBytes = "amount\"".getBytes();
-
-    static Transaction[] parse(InputStream s) throws IOException, ParsingErrorExceptionException {
-        JSONParser.reset(s);
-        return readArray();
-    }
-
-    private static Transaction[] readArray() throws IOException, ParsingErrorExceptionException {
-        JSONParser.skipTo((byte) '[');
-
-        ArrayList<Transaction> result = new ArrayList<>();
-        byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
-        if (read == ']') {
-            return result.toArray(new Transaction[0]);
-        } else if (read == '{') {
-            result.add(parseObject());
-        }
-
-        while (true) {
-
-            byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
-            if (readInner == ']') {
-                return result.toArray(new Transaction[0]);
-            } else if (readInner == ',') {
-                JSONParser.skipTo((byte) '{');
-                result.add(parseObject());
-            }
-
-        }
-    }
-
-    private static void readAccount(Transaction tr, int ee) throws IOException, ParsingErrorExceptionException {
-
-        JSONParser.skipTo((byte) '"');
-        JSONParser.ensureSize(JSONParser.cursor + 26);
-
-        switch (ee) {
-            case 0:
-                for (int i = 0; i < 16; i++) {
-                    tr.credit1 = tr.credit1
-                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
-                }
-
-                for (int i = 16; i < 26; i++) {
-                    tr.credit2 = tr.credit2
-                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
-                }
-                break;
-            case 1:
-                for (int i = 0; i < 16; i++) {
-                    tr.debit1 = tr.debit1
-                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - (i * 4));
-                }
-
-                for (int i = 16; i < 26; i++) {
-                    tr.debit2 = tr.debit2
-                            | ((JSONParser.buffer[JSONParser.cursor + i] - '0') & 0xffffffffL) << (60 - ((i - 16) * 4));
-                }
-
-        }
-        JSONParser.cursor += 27;
-
-    }
-
-    private static long parseAmount() throws IOException, ParsingErrorExceptionException {
-
-        int start = 0;
-
-        while (true) {
-            byte r = JSONParser.read();
-
-            if (!JSONParser.isWhitespace(r)) {
-                start = JSONParser.cursor - 1;
-                break;
-            }
-        }
-
-        while (true) {
-            byte r = JSONParser.read();
-
-            if (r == '}' || JSONParser.isWhitespace(r) || r == ',') {
-                JSONParser.cursor--;
-                String s = new String(JSONParser.buffer, start, JSONParser.cursor - start);
-                return (long) (Float.parseFloat(s) * 100);
-            }
-        }
-    }
-
-    private static void key(Transaction r) throws IOException, ParsingErrorExceptionException {
-        JSONParser.skipTo((byte) '"');
-
-        if (JSONParser.compareKey(creditAccountBytes)) {
-            JSONParser.skipTo((byte) ':');
-            readAccount(r, 0);
-            // r.creditAccount = "";
-            return;
-        }
-
-        if (JSONParser.compareKey(debitAccountBytes)) {
-            JSONParser.skipTo((byte) ':');
-            readAccount(r, 1);
-            return;
-        }
-
-        if (JSONParser.compareKey(amountBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.amount = parseAmount();
-            return;
-        }
-
-    }
-
-    private static Transaction parseObject() throws IOException, ParsingErrorExceptionException {
-
-        Transaction r = new Transaction();
-
-        TransactionsParser.key(r);
-        JSONParser.skipTo((byte) ',');
-        TransactionsParser.key(r);
-        JSONParser.skipTo((byte) ',');
-        TransactionsParser.key(r);
-
-        JSONParser.skipTo((byte) '}');
-
-        return r;
-    }
 }
 
 class GameParser {
@@ -365,162 +227,6 @@ class GameParser {
             return;
         }
 
-    }
-
-}
-
-class AtmParser {
-
-    static byte[] regionKeyBytes = "region\"".getBytes();
-    static byte[] requestTypeBytes = "requestType\"".getBytes();
-    static byte[] atmIdKeyBytes = "atmId\"".getBytes();
-
-    static byte[] STANDARDBytes = "STANDARD\"".getBytes();
-    static byte[] PRIORITYBytes = "PRIORITY\"".getBytes();
-    static byte[] SignalLowBytes = "SIGNAL_LOW\"".getBytes();
-    static byte[] FAILURE_RESTARTBytes = "FAILURE_RESTART\"".getBytes();
-
-    private static MyArray<Request> result = new MyArray<Request>();
-
-    static void key(Request r, int i) throws IOException, ParsingErrorExceptionException {
-        JSONParser.skipTo((byte) '"');
-
-        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.region = JSONParser.readNumber();
-            return;
-        }
-
-        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
-            JSONParser.skipTo((byte) ':');
-            JSONParser.skipTo((byte) '"');
-            r.requestType = AtmParser.readRequestType();
-            return;
-        }
-
-        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.atmId = JSONParser.readNumber();
-            return;
-        }
-    }
-
-    static int readRequestType() throws ParsingErrorExceptionException, IOException {
-
-        if (JSONParser.compareKey(AtmParser.STANDARDBytes)) {
-            return 3;
-        }
-
-        if (JSONParser.compareKey(AtmParser.PRIORITYBytes)) {
-            return 1;
-        }
-
-        if (JSONParser.compareKey(AtmParser.SignalLowBytes)) {
-            return 2;
-        }
-
-        if (JSONParser.compareKey(AtmParser.FAILURE_RESTARTBytes)) {
-            return 0;
-        }
-
-        throw new ParsingErrorExceptionException();
-
-    }
-
-    static Request parseObject() throws IOException, ParsingErrorExceptionException {
-
-        Request r = new Request();
-
-        JSONParser.skipTo((byte) '"');
-
-        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.region = JSONParser.readNumber();
-        } else
-
-        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
-            JSONParser.skipTo((byte) ':');
-            JSONParser.skipTo((byte) '"');
-            r.requestType = AtmParser.readRequestType();
-        } else
-
-        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.atmId = JSONParser.readNumber();
-        }
-
-        // AtmmParser.key(r, 0);
-        JSONParser.skipTo((byte) ',');
-
-        JSONParser.skipTo((byte) '"');
-
-        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
-            JSONParser.skipTo((byte) ':');
-            JSONParser.skipTo((byte) '"');
-            r.requestType = AtmParser.readRequestType();
-        } else if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.region = JSONParser.readNumber();
-        } else
-
-        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.atmId = JSONParser.readNumber();
-        }
-
-        // AtmmParser.key(r, 1);
-        JSONParser.skipTo((byte) ',');
-
-        JSONParser.skipTo((byte) '"');
-
-        if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.atmId = JSONParser.readNumber();
-        } else
-
-        if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
-            JSONParser.skipTo((byte) ':');
-            r.region = JSONParser.readNumber();
-        } else
-
-        if (JSONParser.compareKey(AtmParser.requestTypeBytes)) {
-            JSONParser.skipTo((byte) ':');
-            JSONParser.skipTo((byte) '"');
-            r.requestType = AtmParser.readRequestType();
-        }
-
-        // AtmmParser.key(r, 2);
-
-        JSONParser.skipTo((byte) '}');
-
-        return r;
-    }
-
-    static MyArray<Request> parse(InputStream is) throws IOException, ParsingErrorExceptionException {
-
-        JSONParser.reset(is);
-        result.clear();
-
-        JSONParser.skipTo((byte) '[');
-
-        byte read = JSONParser.skipToEther((byte) '{', (byte) ']');
-        if (read == ']') {
-            return result;
-        } else if (read == '{') {
-            result.add(parseObject());
-        }
-
-        while (true) {
-
-            byte readInner = JSONParser.skipToEther((byte) ',', (byte) ']');
-            if (readInner == ']') {
-                return result;
-            } else if (readInner == ',') {
-                JSONParser.skipTo((byte) '{');
-                result.add(parseObject());
-            }
-
-        }
     }
 
 }

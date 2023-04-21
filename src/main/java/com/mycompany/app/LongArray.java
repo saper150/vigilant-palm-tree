@@ -1,21 +1,18 @@
 package com.mycompany.app;
 
-import java.util.Arrays;
-import java.util.Comparator;
-
-public class MyArray<T> {
-    T[] data = (T[]) new Object[64];
+public class LongArray {
+    long[] data = new long[64];
     int size = 0;
 
     void ensureSize() {
         if (data.length == size) {
-            T[] newData = (T[]) new Object[data.length * 2];
+            long[] newData = new long[data.length * 2];
             System.arraycopy(data, 0, newData, 0, data.length);
             data = newData;
         }
     }
 
-    void add(T toAdd) {
+    void add(long toAdd) {
         ensureSize();
         data[size++] = toAdd;
     }
@@ -24,12 +21,8 @@ public class MyArray<T> {
         return size;
     }
 
-    T get(int i) {
+    long get(int i) {
         return data[i];
-    }
-
-    void sort(Comparator<T> comp) {
-        Sort.doublePivotQuickSort(data, 0, size - 1, comp);
     }
 
     void clear() {
