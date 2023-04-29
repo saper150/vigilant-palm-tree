@@ -137,8 +137,6 @@ public class AtmService {
 
     static final byte[] falseArray = new byte[MAX_SIZE];
 
-    static StringBuilder builder = new StringBuilder();
-
     static {
         for (int i = 0; i < MAX_SIZE; i++) {
             MyArrayPool[i] = new LongArray();
@@ -171,11 +169,11 @@ public class AtmService {
                     continue;
                 }
 
-                builder.append("{\"region\":");
-                builder.append(region);
-                builder.append(",\"atmId\":");
-                builder.append(atmId);
-                builder.append("},");
+                StaticBuilder.builder.append("{\"region\":");
+                StaticBuilder.builder.append(region);
+                StaticBuilder.builder.append(",\"atmId\":");
+                StaticBuilder.builder.append(atmId);
+                StaticBuilder.builder.append("},");
                 added[atmId] = 1;
 
             }
@@ -193,9 +191,9 @@ public class AtmService {
 
         Arrays.fill(byRegions, null);
 
-        builder.setLength(0);
+        StaticBuilder.builder.setLength(0);
 
-        builder.append('[');
+        StaticBuilder.builder.append('[');
 
         int maxRegion = 0;
 
@@ -234,9 +232,9 @@ public class AtmService {
 
         }
 
-        builder.replace(builder.length() - 1, builder.length(), "]");
+        StaticBuilder.builder.replace(StaticBuilder.builder.length() - 1, StaticBuilder.builder.length(), "]");
 
-        return builder.toString();
+        return StaticBuilder.builder.toString();
     }
 
 }

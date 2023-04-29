@@ -63,7 +63,7 @@ public class App {
 
     new Runner(opt).run();
 
-    gameTest();
+    // gameTest();
     // AtmTest();
 
     // transactionsBenchmark();
@@ -105,9 +105,10 @@ public class App {
       return Game.process(GameParser.parse(is));
     }));
 
-    // server.createContext("/transactions/report", new RequestHandler((is) -> {
-    // return Transactions.process(TransactionsParser.parse(is));
-    // }));
+    server.createContext("/transactions/report", new RequestHandler((is) -> {
+      TransactionsParser.parse(is);
+      return Transactions.getResults();
+    }));
 
     server.setExecutor(null); // creates a default executor
     server.start();
@@ -118,7 +119,52 @@ public class App {
     InputStream is = new FileInputStream("AtmGenerated.json");
 
     URL url = new URL("http://localhost:8080/atms/calculateOrder");
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Content-Type", "application/json");
+
+    connection.setUseCaches(false);
+    connection.setDoOutput(true);
+
+    is.transferTo(connection.getOutputStream());
+    is.close();
+    // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
+
+    // wr.writeBytes(urlParameters);
+    // wr.close();
+    connection.getInputStream().readAllBytes();
+
+  }
+
+  @Benchmark
+  public static void TransactionE2E() throws IOException {
+    InputStream is = new FileInputStream("generated.json");
+
+    URL url = new URL("http://localhost:8080/transactions/report");
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Content-Type", "application/json");
+
+    connection.setUseCaches(false);
+    connection.setDoOutput(true);
+
+    is.transferTo(connection.getOutputStream());
+    is.close();
+    // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
+
+    // wr.writeBytes(urlParameters);
+    // wr.close();
+    connection.getInputStream().readAllBytes();
+
+  }
+
+  // @Benchmark
+  public static void GameE2E() throws IOException {
+    InputStream is = new FileInputStream("GameGenerated.json");
+
+    URL url = new URL("http://localhost:8080/onlinegame/calculate");
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
     connection.setRequestMethod("POST");
@@ -155,7 +201,7 @@ public class App {
     String s = Transactions.getResults();
   }
 
-  @Benchmark
+  // @Benchmark
   public static void gameBenchmark() throws IOException, ParsingErrorExceptionException {
     InputStream is = new FileInputStream("GameGenerated.json");
     players = GameParser.parse(is);

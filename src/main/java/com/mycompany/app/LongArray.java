@@ -21,6 +21,10 @@ public class LongArray {
         return size;
     }
 
+    void sort(LongComparator comp) {
+        LongSort.doublePivotQuickSort(data, 0, size - 1, comp);
+    }
+
     long get(int i) {
         return data[i];
     }

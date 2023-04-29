@@ -2,8 +2,6 @@ package com.mycompany.app;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 class Transaction {
     long debit1;
@@ -199,35 +197,34 @@ public class Transactions {
         if (acc.length == 0) {
             return "[]";
         }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
+        StaticBuilder.builder.setLength(0);
+        StaticBuilder.builder.append('[');
         for (Account account : acc) {
 
-            sb.append("{\"account\":\"");
+            StaticBuilder.builder.append("{\"account\":\"");
 
             for (int i = 0; i < 16; i++) {
-                sb.append((char) (((account.account1 >> (60 - i * 4)) & 0b00001111) + '0'));
+                StaticBuilder.builder.append((char) (((account.account1 >> (60 - i * 4)) & 0b00001111) + '0'));
             }
             for (int i = 0; i < 10; i++) {
-                sb.append((char) (((account.account2 >> (60 - i * 4)) & 0b00001111) + '0'));
+                StaticBuilder.builder.append((char) (((account.account2 >> (60 - i * 4)) & 0b00001111) + '0'));
             }
             long whole = account.balance / 100;
             long fraction = Math.abs(account.balance) % 100;
 
-            sb.append("\",\"debitCount\":");
-            sb.append(account.debitCount);
-            sb.append(",\"creditCount\":");
-            sb.append(account.creditCount);
-            sb.append(",\"balance\":");
-            sb.append(whole);
-            sb.append('.');
-            sb.append(fraction);
-            sb.append('}');
-            sb.append(',');
+            StaticBuilder.builder.append("\",\"debitCount\":");
+            StaticBuilder.builder.append(account.debitCount);
+            StaticBuilder.builder.append(",\"creditCount\":");
+            StaticBuilder.builder.append(account.creditCount);
+            StaticBuilder.builder.append(",\"balance\":");
+            StaticBuilder.builder.append(whole);
+            StaticBuilder.builder.append('.');
+            StaticBuilder.builder.append(fraction);
+            StaticBuilder.builder.append('}');
+            StaticBuilder.builder.append(',');
         }
-        sb.replace(sb.length() - 1, sb.length(), "]");
-        return sb.toString();
+        StaticBuilder.builder.replace(StaticBuilder.builder.length() - 1, StaticBuilder.builder.length(), "]");
+        return StaticBuilder.builder.toString();
     }
 
     static void sort(Account[] accounts) {
