@@ -1,6 +1,6 @@
 package com.mycompany.app;
 
 public class StaticBuilder {
-    public static StringBuilder builder = new StringBuilder();
+    public static final StringBuilder builder = new StringBuilder();
 
 }

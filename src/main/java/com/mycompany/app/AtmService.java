@@ -2,6 +2,7 @@ package com.mycompany.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 class Request {
@@ -21,14 +22,14 @@ class Request {
 
 class AtmParser {
 
-    static byte[] regionKeyBytes = "region\"".getBytes();
-    static byte[] requestTypeBytes = "requestType\"".getBytes();
-    static byte[] atmIdKeyBytes = "atmId\"".getBytes();
+    static byte[] regionKeyBytes = "region\"".getBytes(StandardCharsets.US_ASCII);
+    static byte[] requestTypeBytes = "requestType\"".getBytes(StandardCharsets.US_ASCII);
+    static byte[] atmIdKeyBytes = "atmId\"".getBytes(StandardCharsets.US_ASCII);
 
-    static byte[] STANDARDBytes = "STANDARD\"".getBytes();
-    static byte[] PRIORITYBytes = "PRIORITY\"".getBytes();
-    static byte[] SignalLowBytes = "SIGNAL_LOW\"".getBytes();
-    static byte[] FAILURE_RESTARTBytes = "FAILURE_RESTART\"".getBytes();
+    static byte[] STANDARDBytes = "STANDARD\"".getBytes(StandardCharsets.US_ASCII);
+    static byte[] PRIORITYBytes = "PRIORITY\"".getBytes(StandardCharsets.US_ASCII);
+    static byte[] SignalLowBytes = "SIGNAL_LOW\"".getBytes(StandardCharsets.US_ASCII);
+    static byte[] FAILURE_RESTARTBytes = "FAILURE_RESTART\"".getBytes(StandardCharsets.US_ASCII);
 
     private static LongArray result = new LongArray();
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <Match>
+        <Package name="com.mycompany.app.jmh_generated" />
+    </Match>
+
+    <Match>
+        <Class name="com.mycompany.app.MyHashMap" />
+        <Bug code="EI" />
+    </Match>
+
+</FindBugsFilter>

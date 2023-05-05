@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import org.openjdk.jmh.runner.Runner;
@@ -33,94 +34,99 @@ public class Benchmarks {
     }
 
     // @Benchmark
-    public static void AtmE2E() throws IOException {
-        InputStream is = new FileInputStream("AtmGenerated.json");
+    public static void atmE2E() throws IOException {
 
-        URL url = new URL("http://localhost:8080/atms/calculateOrder");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        try (InputStream is = new FileInputStream("AtmGenerated.json")) {
+            URL url = new URL("http://localhost:8080/atms/calculateOrder");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
 
-        connection.setUseCaches(false);
-        connection.setDoOutput(true);
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
 
-        is.transferTo(connection.getOutputStream());
-        is.close();
-        // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
-
-        // wr.writeBytes(urlParameters);
-        // wr.close();
-        connection.getInputStream().readAllBytes();
+            is.transferTo(connection.getOutputStream());
+            is.close();
+            connection.getInputStream().readAllBytes();
+        }
 
     }
 
     @Benchmark
-    public static void TransactionE2E() throws IOException {
-        InputStream is = new FileInputStream("TransactionGenerated.json");
+    public static void transactionE2E() throws IOException {
+        try (InputStream is = new FileInputStream("TransactionGenerated.json")) {
 
-        URL url = new URL("http://localhost:8080/transactions/report");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URL url = new URL("http://localhost:8080/transactions/report");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
 
-        connection.setUseCaches(false);
-        connection.setDoOutput(true);
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
 
-        is.transferTo(connection.getOutputStream());
-        is.close();
-        // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
+            is.transferTo(connection.getOutputStream());
+            is.close();
+            // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
 
-        // wr.writeBytes(urlParameters);
-        // wr.close();
-        connection.getInputStream().readAllBytes();
+            // wr.writeBytes(urlParameters);
+            // wr.close();
+            connection.getInputStream().readAllBytes();
 
-    }
-
-    // @Benchmark
-    public static void GameE2E() throws IOException {
-        InputStream is = new FileInputStream("GameGenerated.json");
-
-        URL url = new URL("http://localhost:8080/onlinegame/calculate");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-
-        connection.setUseCaches(false);
-        connection.setDoOutput(true);
-
-        is.transferTo(connection.getOutputStream());
-        is.close();
-        // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
-
-        // wr.writeBytes(urlParameters);
-        // wr.close();
-        connection.getInputStream().readAllBytes();
+        }
 
     }
 
     // @Benchmark
-    public static void transactionsBenchmark() throws IOException, ParsingErrorExceptionException {
+    public static void gameE2E() throws IOException {
+        try (InputStream is = new FileInputStream("GameGenerated.json")) {
+
+            URL url = new URL("http://localhost:8080/onlinegame/calculate");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
+
+            is.transferTo(connection.getOutputStream());
+            is.close();
+            // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
+
+            // wr.writeBytes(urlParameters);
+            // wr.close();
+            connection.getInputStream().readAllBytes();
+
+        }
+    }
+
+    // @Benchmark
+    public static void transactionsBenchmark(Blackhole b) throws IOException,
+            ParsingErrorExceptionException {
         InputStream is = new FileInputStream("TransactionGenerated.json");
         TransactionsParser.parse(is);
         String s = Transactions.getResults();
+        b.consume(s);
     }
 
     // @Benchmark
-    public static void gameBenchmark() throws IOException, ParsingErrorExceptionException {
+    public static void gameBenchmark(Blackhole b) throws IOException,
+            ParsingErrorExceptionException {
         InputStream is = new FileInputStream("GameGenerated.json");
         Players players = GameParser.parse(is);
 
         String s = Game.process(players);
+        b.consume(s);
     }
 
     // @Benchmark
-    public static void atmBenchmark() throws IOException, ParsingErrorExceptionException {
+    public static void atmBenchmark(Blackhole b) throws IOException,
+            ParsingErrorExceptionException {
         InputStream is = new FileInputStream("AtmGenerated.json");
         LongArray ee = AtmParser.parse(is);
         String s = AtmService.process(ee);
-
+        b.consume(s);
     }
 }

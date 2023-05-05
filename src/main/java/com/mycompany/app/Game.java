@@ -2,6 +2,7 @@ package com.mycompany.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -28,10 +29,10 @@ class Players {
 
 class GameParser {
 
-    private static byte[] groupCountBytes = "groupCount\"".getBytes();
-    private static byte[] clansBytes = "clans\"".getBytes();
-    private static byte[] numberOfPlayersBytes = "numberOfPlayers\"".getBytes();
-    private static byte[] pointsBytes = "points\"".getBytes();
+    private static byte[] groupCountBytes = "groupCount\"".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] clansBytes = "clans\"".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] numberOfPlayersBytes = "numberOfPlayers\"".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] pointsBytes = "points\"".getBytes(StandardCharsets.US_ASCII);
 
     private static LongArray result = new LongArray();
 

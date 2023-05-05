@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -28,7 +29,6 @@ public class App {
 
     });
     t.start();
-
     // Benchmarks.run();
 
   }
@@ -59,7 +59,7 @@ public class App {
 
   static class RequestHandler implements HttpHandler {
 
-    HandlerAction handlerAction;
+    private HandlerAction handlerAction;
 
     public RequestHandler(HandlerAction o) {
       this.handlerAction = o;
@@ -70,7 +70,7 @@ public class App {
       OutputStream os = ctx.getResponseBody();
       try {
 
-        byte[] response = handlerAction.action(ctx.getRequestBody()).getBytes();
+        byte[] response = handlerAction.action(ctx.getRequestBody()).getBytes(StandardCharsets.US_ASCII);
         ctx.getResponseHeaders().put("Content-Type", Collections.singletonList("application/json"));
         ctx.sendResponseHeaders(200, response.length);
         os.write(response);
@@ -106,7 +106,7 @@ public class App {
           ]
             """;
 
-    InputStream is = new ByteArrayInputStream(transactionExample.getBytes());
+    InputStream is = new ByteArrayInputStream(transactionExample.getBytes(StandardCharsets.US_ASCII));
     TransactionsParser.parse(is);
     String s = Transactions.getResults();
     System.out.println(s);
@@ -155,7 +155,7 @@ public class App {
 
                 """;
 
-    InputStream is = new ByteArrayInputStream(gameExample.getBytes());
+    InputStream is = new ByteArrayInputStream(gameExample.getBytes(StandardCharsets.US_ASCII));
     Players p = GameParser.parse(is);
     String s = Game.process(p);
     System.out.println(s);
@@ -218,7 +218,7 @@ public class App {
 
                   """;
 
-    InputStream is = new ByteArrayInputStream(gameExample.getBytes());
+    InputStream is = new ByteArrayInputStream(gameExample.getBytes(StandardCharsets.US_ASCII));
     LongArray p = AtmParser.parse(is);
     String s = AtmService.process(p);
     System.out.println(s);

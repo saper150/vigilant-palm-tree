@@ -2,16 +2,7 @@ package com.mycompany.app;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-class Transaction {
-    long debit1;
-    long debit2;
-
-    long credit1;
-    long credit2;
-
-    public long amount;
-}
+import java.nio.charset.StandardCharsets;
 
 class Account {
 
@@ -25,9 +16,9 @@ class Account {
 
 class TransactionsParser {
 
-    private static byte[] debitAccountBytes = "debitAccount\"".getBytes();
-    private static byte[] creditAccountBytes = "creditAccount\"".getBytes();
-    private static byte[] amountBytes = "amount\"".getBytes();
+    private static byte[] debitAccountBytes = "debitAccount\"".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] creditAccountBytes = "creditAccount\"".getBytes(StandardCharsets.US_ASCII);
+    private static byte[] amountBytes = "amount\"".getBytes(StandardCharsets.US_ASCII);
 
     static private long account1;
     static private long account2;
@@ -116,7 +107,8 @@ class TransactionsParser {
                 }
 
                 if (useFallback) {
-                    String s = new String(JSONParser.buffer, start, JSONParser.cursor - start);
+                    String s = new String(JSONParser.buffer, start, JSONParser.cursor - start,
+                            StandardCharsets.US_ASCII);
                     return (long) (Float.parseFloat(s) * 100);
                 }
 

@@ -27,7 +27,7 @@ public class MyHashMap {
     private Account[] table = new Account[DEFAULT_CAPACITY];
     private int tableSizeMinusOne = table.length - 1;
     private int size = 0;
-    private final double loadFactor = 0.3;
+    private static final double loadFactor = 0.3;
     private int threshold = (int) (DEFAULT_CAPACITY * loadFactor);
 
     public MyHashMap() {
