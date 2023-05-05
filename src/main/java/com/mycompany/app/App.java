@@ -19,16 +19,16 @@ public class App {
 
   public static void main(String[] args) throws IOException, RunnerException {
 
-    Thread t = new Thread(() -> {
-      try {
-        createServer();
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+    createServer();
+    // Thread t = new Thread(() -> {
+    // try {
+    // } catch (IOException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
 
-    });
-    t.start();
+    // });
+    // t.start();
     // Benchmarks.run();
 
   }
