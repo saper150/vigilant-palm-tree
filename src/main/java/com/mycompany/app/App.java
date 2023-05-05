@@ -1,44 +1,22 @@
 package com.mycompany.app;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.Collections;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.openjdk.jmh.annotations.*;
-
 import com.sun.net.httpserver.HttpServer;
 
-/**
- * Hello world!
- *
- */
+import org.openjdk.jmh.runner.RunnerException;
 
-@State(Scope.Thread)
 public class App {
 
-  private static Transaction[] parsedTransaction;
-  private static MyArray<Request> parsedAtm;
-  private static Players players;
-
-  public static void main(String[] args) throws IOException, ParsingErrorExceptionException, RunnerException {
+  public static void main(String[] args) throws IOException, RunnerException {
 
     Thread t = new Thread(() -> {
       try {
@@ -51,46 +29,7 @@ public class App {
     });
     t.start();
 
-    Options opt = new OptionsBuilder()
-        .include(App.class.getSimpleName())
-        .forks(1)
-        .warmupIterations(1)
-        .threads(1)
-        .mode(Mode.AverageTime)
-        .measurementIterations(3)
-        .timeUnit(TimeUnit.MILLISECONDS)
-        .build();
-
-    new Runner(opt).run();
-
-    // gameTest();
-    // AtmTest();
-
-    // transactionsBenchmark();
-
-    // transactionsTest();
-
-    // int minCollisions = Integer.MAX_VALUE;
-    // int minNoise = 0;
-    // for (int i = 0; i < 2; i++) {
-    // // MyHashMap.NOISE1 = ThreadLocalRandom.current().nextInt(0,
-    // Integer.MAX_VALUE);
-    // // MyHashMap.NOISE2 = ThreadLocalRandom.current().nextInt(0,
-    // Integer.MAX_VALUE);
-
-    // // MyHashMap.NOISE1 = 0;
-    // transactionsBenchmark();
-    // if (MyHashMap.colisions < minCollisions) {
-    // minCollisions = MyHashMap.colisions;
-    // // minNoise = MyHashMap.NOISE1;
-    // }
-    // MyHashMap.colisions = 0;
-    // }
-
-    // System.out.println(minCollisions);
-    // System.out.println(minNoise);
-
-    // transactionsTest();
+    // Benchmarks.run();
 
   }
 
@@ -114,134 +53,31 @@ public class App {
     server.start();
   }
 
-  // @Benchmark
-  public static void AtmE2E() throws IOException {
-    InputStream is = new FileInputStream("AtmGenerated.json");
-
-    URL url = new URL("http://localhost:8080/atms/calculateOrder");
-    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-    connection.setRequestMethod("POST");
-    connection.setRequestProperty("Content-Type", "application/json");
-
-    connection.setUseCaches(false);
-    connection.setDoOutput(true);
-
-    is.transferTo(connection.getOutputStream());
-    is.close();
-    // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
-
-    // wr.writeBytes(urlParameters);
-    // wr.close();
-    connection.getInputStream().readAllBytes();
-
-  }
-
-  @Benchmark
-  public static void TransactionE2E() throws IOException {
-    InputStream is = new FileInputStream("generated.json");
-
-    URL url = new URL("http://localhost:8080/transactions/report");
-    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-    connection.setRequestMethod("POST");
-    connection.setRequestProperty("Content-Type", "application/json");
-
-    connection.setUseCaches(false);
-    connection.setDoOutput(true);
-
-    is.transferTo(connection.getOutputStream());
-    is.close();
-    // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
-
-    // wr.writeBytes(urlParameters);
-    // wr.close();
-    connection.getInputStream().readAllBytes();
-
-  }
-
-  // @Benchmark
-  public static void GameE2E() throws IOException {
-    InputStream is = new FileInputStream("GameGenerated.json");
-
-    URL url = new URL("http://localhost:8080/onlinegame/calculate");
-    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-    connection.setRequestMethod("POST");
-    connection.setRequestProperty("Content-Type", "application/json");
-
-    connection.setUseCaches(false);
-    connection.setDoOutput(true);
-
-    is.transferTo(connection.getOutputStream());
-    is.close();
-    // DataOutputStream wr = new DataOutputStream (connection.getOutputStream());
-
-    // wr.writeBytes(urlParameters);
-    // wr.close();
-    connection.getInputStream().readAllBytes();
-
-  }
-
-  // @Setup
-  public static void set() throws IOException, ParsingErrorExceptionException {
-    // parsedAtm = AtmmParser.parse(new FileInputStream("AtmGenerated.json"));
-    // // eee = AtmmParser.parse(is);
-
-    // parsedTransaction = TransactionsParser.parse(new
-    // FileInputStream("generated.json"));
-    players = GameParser.parse(new FileInputStream("GameGenerated.json"));
-
-  }
-
-  // @Benchmark
-  public static void transactionsBenchmark() throws IOException, ParsingErrorExceptionException {
-    InputStream is = new FileInputStream("generated.json");
-    TransactionsParser.parse(is);
-    String s = Transactions.getResults();
-  }
-
-  // @Benchmark
-  public static void gameBenchmark() throws IOException, ParsingErrorExceptionException {
-    InputStream is = new FileInputStream("GameGenerated.json");
-    players = GameParser.parse(is);
-
-    String s = Game.process(players);
-  }
-
-  // @Benchmark
-  public static void atmBenchmark() throws IOException, ParsingErrorExceptionException {
-    InputStream is = new FileInputStream("AtmGenerated.json");
-    LongArray ee = AtmParser.parse(is);
-    String s = AtmService.process(ee);
-
-  }
-
-  interface Op {
-    String process(InputStream is) throws IOException, ParsingErrorExceptionException;
+  interface HandlerAction {
+    String action(InputStream is) throws IOException, ParsingErrorExceptionException;
   }
 
   static class RequestHandler implements HttpHandler {
 
-    Op o;
+    HandlerAction handlerAction;
 
-    public RequestHandler(Op o) {
-      this.o = o;
+    public RequestHandler(HandlerAction o) {
+      this.handlerAction = o;
     }
 
     @Override
-    public void handle(HttpExchange t) throws IOException {
-      OutputStream os = t.getResponseBody();
+    public void handle(HttpExchange ctx) throws IOException {
+      OutputStream os = ctx.getResponseBody();
       try {
 
-        byte[] r = o.process(t.getRequestBody()).getBytes();
-        t.getResponseHeaders().put("Content-Type", Collections.singletonList("application/json"));
-        t.sendResponseHeaders(200, r.length);
-        os.write(r);
+        byte[] response = handlerAction.action(ctx.getRequestBody()).getBytes();
+        ctx.getResponseHeaders().put("Content-Type", Collections.singletonList("application/json"));
+        ctx.sendResponseHeaders(200, response.length);
+        os.write(response);
       } catch (Exception e) {
         e.printStackTrace();
 
-        t.sendResponseHeaders(500, 0);
+        ctx.sendResponseHeaders(500, 0);
       }
       os.close();
 

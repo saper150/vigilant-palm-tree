@@ -5,6 +5,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 class ParsingErrorExceptionException extends Exception {
+
+    public ParsingErrorExceptionException() {
+        super();
+    }
+
+    public ParsingErrorExceptionException(String msg) {
+        super(msg);
+    }
 }
 
 public class JSONParser {
@@ -24,8 +32,11 @@ public class JSONParser {
                 System.arraycopy(buffer, 0, newBuffer, 0, bufferEnd);
                 buffer = newBuffer;
             }
-
-            bufferEnd += is.read(buffer, bufferEnd, blockSize);
+            int bytesRead = is.read(buffer, bufferEnd, blockSize);
+            if (bytesRead < 1) {
+                return;
+            }
+            bufferEnd += bytesRead;
         }
 
     }

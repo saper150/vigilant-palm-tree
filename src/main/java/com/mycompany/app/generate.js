@@ -19,31 +19,28 @@ res = [];
 
 for (let i = 0; i < 100000; i++) {
   res.push({
-    region: Math.round(Math.random() * 200),
+    region: Math.round(Math.random() * 200) + 1,
     requestType: requestType(),
-    atmId: Math.round(Math.random() * 300),
+    atmId: Math.round(Math.random() * 300) + 1,
   });
 }
 
-if (false) {
-  fs.writeFileSync(
-    "./atmExamples/generated.json",
-    JSON.stringify(res, null, 4)
-  );
+if (true) {
+  fs.writeFileSync("./AtmGenerated.json", JSON.stringify(res));
 }
 
 {
   res = [];
   for (let i = 0; i < 20_000; i++) {
     res.push({
-      numberOfPlayers: Math.floor(Math.random() * 500) + 1,
+      numberOfPlayers: Math.floor(Math.random() * 200) + 1,
       points: Math.floor(Math.random() * 100_000) + 1,
     });
   }
 
-  if (false) {
+  if (true) {
     fs.writeFileSync(
-      "./gameExamples/generated.json",
+      "./GameGenerated.json",
       JSON.stringify(
         {
           groupCount: 1000,
@@ -83,5 +80,7 @@ function generateRandomNumericString() {
   for (let i = 0; i < 100_000; i++) {
     res.push(generateRandomTransaction());
   }
-  fs.writeFileSync("./transactionsExample/generated.json", JSON.stringify(res));
+  if (false) {
+    fs.writeFileSync("./TransactionGenerated.json", JSON.stringify(res));
+  }
 }

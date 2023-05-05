@@ -7,12 +7,12 @@ import java.util.Arrays;
 
 class Clan {
     static public int getNumberOfPlayers(long clan) {
-        return ((int) (clan >> 32) & 0b11111111111100000000000000000000) >> (32 - 12);
+        return ((int) (clan >> 32) & 0b00000000000000000000111111111111);
     }
 
     static public int getPoints(long clan) {
 
-        return ((int) (clan >> 32)) & 0b00000000000011111111111111111111;
+        return ((int) (clan >> 32) & 0b11111111111111111111000000000000) >> (32 - 20);
     }
 
     static public int getDeletedIndex(long clan) {
@@ -110,13 +110,21 @@ class GameParser {
 
         if (JSONParser.compareKey(numberOfPlayersBytes)) {
             JSONParser.skipTo((byte) ':');
-            clan = clan | ((((long) JSONParser.readNumber()) & 0xffffffffL) << 64 - 12);
+            int numberOfPlayers = JSONParser.readNumber();
+            if (numberOfPlayers < 1 || numberOfPlayers > 1000) {
+                throw new ParsingErrorExceptionException("numberOfPlayers is out of range");
+            }
+            clan = clan | ((((long) numberOfPlayers) & 0xffffffffL) << 64 - (12 + 20));
             return;
         }
 
         if (JSONParser.compareKey(pointsBytes)) {
             JSONParser.skipTo((byte) ':');
-            clan = clan | ((((long) JSONParser.readNumber()) & 0xffffffffL) << 64 - (12 + 20));
+            int points = JSONParser.readNumber();
+            if (points < 1 || points > 1000000) {
+                throw new ParsingErrorExceptionException("points is out of range");
+            }
+            clan = clan | ((((long) points) & 0xffffffffL) << 64 - 20);
             return;
         }
 

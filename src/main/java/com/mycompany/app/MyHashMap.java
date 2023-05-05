@@ -1,13 +1,38 @@
 package com.mycompany.app;
 
+class AccountPool {
+
+    static MyArray<Account> pool = new MyArray<>();
+    static int index = 0;
+
+    static Account getAccount() {
+        if (pool.size > index - 1) {
+            Account acc = new Account();
+            pool.add(acc);
+            return acc;
+        }
+        return pool.data[index++];
+    }
+
+    static void reset() {
+        index = 0;
+    }
+
+}
+
 public class MyHashMap {
-    private static final int DEFAULT_CAPACITY = 1024 * 16;
+    private static final int DEFAULT_CAPACITY = 1024 * 8;
+    static MyArray<Account> resultArray = new MyArray<>();
 
     private Account[] table = new Account[DEFAULT_CAPACITY];
     private int tableSizeMinusOne = table.length - 1;
     private int size = 0;
     private final double loadFactor = 0.3;
     private int threshold = (int) (DEFAULT_CAPACITY * loadFactor);
+
+    public MyHashMap() {
+        AccountPool.reset();
+    }
 
     private void put(Account acc) {
 
@@ -29,7 +54,7 @@ public class MyHashMap {
         while (true) {
 
             if (table[index] == null) {
-                Account account = new Account();
+                Account account = AccountPool.getAccount();
                 account.account1 = key1;
                 account.account2 = key2;
                 table[index] = account;
@@ -53,15 +78,14 @@ public class MyHashMap {
         // return (int) (((key1) ^ ((key2) >> 47) ^ (key1 >> 49)) & tableSizeMinusOne);
     }
 
-    public Account[] toArray() {
-        Account[] res = new Account[size];
-        int i = 0;
+    public MyArray<Account> toArray() {
+        resultArray.clear();
         for (Account account : table) {
             if (account != null) {
-                res[i++] = account;
+                resultArray.add(account);
             }
         }
-        return res;
+        return resultArray;
     }
 
     private void resize() {

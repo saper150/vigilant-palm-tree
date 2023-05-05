@@ -10,16 +10,12 @@ interface LongComparator {
 
 class Sort {
 
-    private static final int MAX_INSERTION_SORT_SIZE = 16;
-
-    public static <T> void sort(MyArray<T> arr, Comparator<T> comp) {
-        doublePivotQuickSort(arr.data, 0, arr.size - 1, comp);
-
-    }
+    private static final int MAX_INSERTION_SORT_SIZE = 17;
 
     static <T> void doublePivotQuickSort(T[] A, int left, int right, Comparator<T> comp) {
 
-        if (right - left <= MAX_INSERTION_SORT_SIZE) {
+        int length = right - left + 1;
+        if (length < MAX_INSERTION_SORT_SIZE) {
             insertionSort(A, left, right, comp);
             return;
         }
@@ -71,15 +67,16 @@ class Sort {
     }
 
     private static <T> void insertionSort(T[] a, int low, int high, Comparator<T> comp) {
-        for (int i, k = low; ++k < high;) {
-            T ai = a[i = k];
 
-            if (comp.compare(ai, a[i - 1]) < 0) {
-                while (--i >= low && comp.compare(ai, a[i]) < 0) {
-                    a[i + 1] = a[i];
+        for (int i = low, j = i; i < high; j = ++i) {
+            T ai = a[i + 1];
+            while (comp.compare(ai, a[j]) < 0) {
+                a[j + 1] = a[j];
+                if (j-- == low) {
+                    break;
                 }
-                a[i + 1] = ai;
             }
+            a[j + 1] = ai;
         }
     }
 
@@ -91,7 +88,9 @@ class LongSort {
 
     static void doublePivotQuickSort(long[] A, int left, int right, LongComparator comp) {
 
-        if (right - left <= MAX_INSERTION_SORT_SIZE) {
+        int length = right - left + 1;
+
+        if (length <= MAX_INSERTION_SORT_SIZE) {
             insertionSort(A, left, right, comp);
             return;
         }
@@ -143,15 +142,16 @@ class LongSort {
     }
 
     private static void insertionSort(long[] a, int low, int high, LongComparator comp) {
-        for (int i, k = low; ++k < high;) {
-            long ai = a[i = k];
 
-            if (comp.compare(ai, a[i - 1]) < 0) {
-                while (--i >= low && comp.compare(ai, a[i]) < 0) {
-                    a[i + 1] = a[i];
+        for (int i = low, j = i; i < high; j = ++i) {
+            long ai = a[i + 1];
+            while (comp.compare(ai, a[j]) < 0) {
+                a[j + 1] = a[j];
+                if (j-- == low) {
+                    break;
                 }
-                a[i + 1] = ai;
             }
+            a[j + 1] = ai;
         }
     }
 

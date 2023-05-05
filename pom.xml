@@ -105,7 +105,7 @@
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.6.0</version>
             <configuration>
-              <mainClass>com.journaldev.maven.utils.BuildInfo</mainClass>
+              <mainClass>com.mycompany.app.App</mainClass>
             </configuration>
         </plugin>
 

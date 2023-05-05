@@ -80,9 +80,9 @@ class TransactionsParser {
         }
 
         account2 = 0;
-        for (int i = 16; i < 26; i++) {
+        for (int i = 0; i < 10; i++) {
             account2 = account2
-                    | ((JSONParser.buffer[JSONParser.cursor + i] - ('0')) & 0xffffffffL) << (60 - (i * 4));
+                    | ((JSONParser.buffer[JSONParser.cursor + i + 16] - ('0')) & 0xffffffffL) << (60 - (i * 4));
         }
         JSONParser.cursor += 27;
 
@@ -153,7 +153,7 @@ class TransactionsParser {
             readAccount();
 
             credit1 = account1;
-            credit2 = account1;
+            credit2 = account2;
             return;
         }
 
@@ -161,7 +161,7 @@ class TransactionsParser {
             JSONParser.skipTo((byte) ':');
             readAccount();
             debit1 = account1;
-            debit2 = account1;
+            debit2 = account2;
             return;
         }
 
@@ -193,21 +193,24 @@ public class Transactions {
 
     static MyHashMap map = new MyHashMap();
 
-    static String serialize(Account[] acc) {
-        if (acc.length == 0) {
+    static String serialize(MyArray<Account> acc) {
+        if (acc.size == 0) {
             return "[]";
         }
         StaticBuilder.builder.setLength(0);
         StaticBuilder.builder.append('[');
-        for (Account account : acc) {
+
+        for (int i = 0; i < acc.size; i++) {
+
+            Account account = acc.get(i);
 
             StaticBuilder.builder.append("{\"account\":\"");
 
-            for (int i = 0; i < 16; i++) {
-                StaticBuilder.builder.append((char) (((account.account1 >> (60 - i * 4)) & 0b00001111) + '0'));
+            for (int j = 0; j < 16; j++) {
+                StaticBuilder.builder.append((char) (((account.account1 >> (60 - j * 4)) & 0b00001111) + '0'));
             }
-            for (int i = 0; i < 10; i++) {
-                StaticBuilder.builder.append((char) (((account.account2 >> (60 - i * 4)) & 0b00001111) + '0'));
+            for (int j = 0; j < 10; j++) {
+                StaticBuilder.builder.append((char) (((account.account2 >> (60 - j * 4)) & 0b00001111) + '0'));
             }
             long whole = account.balance / 100;
             long fraction = Math.abs(account.balance) % 100;
@@ -219,6 +222,9 @@ public class Transactions {
             StaticBuilder.builder.append(",\"balance\":");
             StaticBuilder.builder.append(whole);
             StaticBuilder.builder.append('.');
+            if (fraction < 10) {
+                StaticBuilder.builder.append('0');
+            }
             StaticBuilder.builder.append(fraction);
             StaticBuilder.builder.append('}');
             StaticBuilder.builder.append(',');
@@ -227,8 +233,8 @@ public class Transactions {
         return StaticBuilder.builder.toString();
     }
 
-    static void sort(Account[] accounts) {
-        Sort.doublePivotQuickSort(accounts, 0, accounts.length - 1, (a, b) -> {
+    static void sort(MyArray<Account> accounts) {
+        accounts.sort((a, b) -> {
             int c = Long.compareUnsigned(a.account1, b.account1);
             if (c == 0) {
                 return Long.compareUnsigned(a.account2, b.account2);
@@ -251,7 +257,7 @@ public class Transactions {
     }
 
     static String getResults() {
-        Account[] arr = map.toArray();
+        MyArray<Account> arr = map.toArray();
         sort(arr);
         String result = serialize(arr);
         map = new MyHashMap();

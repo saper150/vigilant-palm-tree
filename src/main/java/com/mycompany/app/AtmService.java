@@ -39,7 +39,8 @@ class AtmParser {
 
         if (JSONParser.compareKey(AtmParser.regionKeyBytes)) {
             JSONParser.skipTo((byte) ':');
-            request = request | (((long) JSONParser.readNumber()) & 0xffffffffL);
+            int region = JSONParser.readNumber();
+            request = request | (((long) region) & 0xffffffffL);
             return;
         }
 
@@ -52,7 +53,8 @@ class AtmParser {
 
         if (JSONParser.compareKey(AtmParser.atmIdKeyBytes)) {
             JSONParser.skipTo((byte) ':');
-            request = request | (((long) JSONParser.readNumber()) << 32);
+            int atmId = JSONParser.readNumber();
+            request = request | (((long) atmId) << 32);
             return;
         }
     }
@@ -80,7 +82,6 @@ class AtmParser {
     }
 
     static long parseObject() throws IOException, ParsingErrorExceptionException {
-
         request = 0;
 
         AtmParser.key();
@@ -155,7 +156,6 @@ public class AtmService {
     static void processBuckets() {
 
         clearAdded();
-
         for (int i = 0; i < buckets.length; i++) {
             LongArray bucket = buckets[i];
 
@@ -205,6 +205,7 @@ public class AtmService {
             if (byRegions[region] == null) {
                 byRegions[region] = MyArrayPool[arrayPoolIndex++];
             }
+
             maxRegion = Math.max(maxRegion, region);
 
             byRegions[region].add(request);
