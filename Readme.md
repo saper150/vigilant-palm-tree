@@ -1,1 +1,10 @@
-Snyk scan ![Known Vulnerabilities](https://snyk.io/test/github/saper150/vigilant-palm-tree/badge.svg)
+# SAST
+
+## Narzędzie codeql
+
+![](/screens/security1.png)
+![](/screens/security2.png)
+
+## Narzędzie spotbugs
+
+![](/screens/spotbugs.png)
